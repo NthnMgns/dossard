@@ -24,6 +24,11 @@ app.include_router(registrations.router)
 app.include_router(results.router)
 
 
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @app.exception_handler(ApiError)
 async def api_error_handler(_: Request, exc: ApiError) -> JSONResponse:
     """Toutes les erreurs métier sortent au format {"error": {"code", "message"}}."""

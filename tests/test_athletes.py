@@ -1,4 +1,5 @@
 from datetime import date
+from pathlib import Path
 
 
 def test_create_athlete_returns_201_with_category(client):
@@ -47,3 +48,43 @@ def test_list_athletes_filters_by_club(client, make_athlete):
 
     assert response.status_code == 200
     assert [a["last_name"] for a in response.json()] == ["Durand"]
+
+
+CSV_EXEMPLE = Path(__file__).parent / "data" / "licencies_exemple.csv"
+
+
+def _import(client, content: bytes):
+    return client.post("/athletes/import", files={"file": ("licencies.csv", content, "text/csv")})
+
+
+def test_import_athletes_reports_created_duplicates_and_errors(client):
+    response = _import(client, CSV_EXEMPLE.read_bytes())
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["created"] == 17
+    assert body["already_present"] == 1
+    assert [e["line"] for e in body["errors"]] == [15, 16]
+    athletes = client.get("/athletes").json()
+    assert len(athletes) == 17
+    margaux = next(a for a in athletes if a["license_number"] == "DOS-900101")
+    assert margaux["birth_date"] == "1998-03-14"
+    assert margaux["category"] == "SENIOR"
+    lebrun = next(a for a in athletes if a["license_number"] == "DOS-900109")
+    assert lebrun["club"] is None
+
+
+def test_import_athletes_twice_creates_nothing(client):
+    _import(client, CSV_EXEMPLE.read_bytes())
+
+    body = _import(client, CSV_EXEMPLE.read_bytes()).json()
+
+    assert body["created"] == 0
+    assert body["already_present"] == 18
+
+
+def test_import_athletes_rejects_missing_columns(client):
+    response = _import(client, b"nom;prenom\nDupont;Jean\n")
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "bad_request"

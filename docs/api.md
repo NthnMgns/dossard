@@ -12,7 +12,7 @@ Toutes les erreurs métier renvoient :
 
 | Code | Statut | Cas |
 |---|---|---|
-| `bad_request` | 400 | requête invalide (code par défaut) |
+| `bad_request` | 400 | requête invalide (code par défaut), p. ex. colonnes manquantes ou fichier non UTF-8 à l'import |
 | `not_found` | 404 | ressource introuvable |
 | `conflict` | 409 | doublon (licence, inscription déjà active) |
 | `invalid_transition` | 409 | changement de statut non permis |
@@ -34,11 +34,13 @@ Les erreurs de validation (422) gardent le format FastAPI par défaut.
 | POST | `/competitions/{competition_id}/events` | Ajoute une épreuve (`name`, `unit`, `category` optionnelle) | 201, 404, 422 |
 | GET | `/athletes` | Liste les athlètes triés par nom, filtre optionnel `?club=` (égalité exacte) | 200 |
 | POST | `/athletes` | Crée un athlète ; la réponse ajoute sa `category` pour la saison en cours | 201, 409, 422 |
+| POST | `/athletes/import` | Importe un CSV fédération (multipart, champ `file`, séparateur `;`, dates `jj/mm/aaaa`, colonnes `nom;prenom;date_naissance;sexe;club;licence;certificat_valide_jusqu`). Renvoie `{"created", "already_present", "errors": [{"line", "message"}]}` ; les lignes valides sont créées même si d'autres sont en erreur (l'en-tête est la ligne 1) | 200, 400, 422 |
 | POST | `/events/{event_id}/registrations` | Inscrit un athlète (`athlete_id`) à une épreuve et lui attribue un dossard | 201, 404, 409, 422 |
 | PATCH | `/registrations/{registration_id}` | Change le `status` d'une inscription | 200, 404, 409, 422 |
 | PUT | `/registrations/{registration_id}/result` | Enregistre ou remplace la `performance` d'une inscription | 200, 404, 409, 422 |
 | GET | `/events/{event_id}/ranking` | Classement de l'épreuve : liste d'entrées `rank`, `bib`, `athlete_id`, `last_name`, `first_name`, `club`, `performance` | 200, 404 |
 | GET | `/competitions/{competition_id}/results.csv` | Export CSV des résultats de la compétition | 200, 404 |
+| GET | `/health` | Vérifie que l'API répond : `{"status": "ok"}` | 200 |
 
 ## Règles métier
 

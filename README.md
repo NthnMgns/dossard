@@ -57,7 +57,6 @@ tests/
 docs/api.md          # référence des endpoints, à tenir à jour
 scripts/
   seed.py            # données d'exemple
-  legacy/            # ancien import CSV des licenciés
 data/                # la base SQLite locale (ignorée par Git)
 ```
 
